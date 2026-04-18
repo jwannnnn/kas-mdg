@@ -1,95 +1,18 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Monitoring Kas</title>
-
-<style>
-body {
-    font-family: Arial;
-    padding: 20px;
-}
-
-.card {
-    padding: 15px;
-    margin: 10px 0;
-    border-radius: 10px;
-    color: white;
-}
-
-.masuk { background: green; }
-.keluar { background: red; }
-.saldo { background: blue; }
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-th, td {
-    padding: 8px;
-    border: 1px solid #ccc;
-    text-align: center;
-}
-
-@media(max-width:600px){
-    table { font-size: 12px; }
-}
-</style>
-
+    <title>Monitoring Kas</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
 
-<h2>Kas studio</h2>
+<h2>Monitoring Kas</h2>
 
-<div class="card masuk">Total Masuk: <span id="masuk">129</span></div>
-<div class="card keluar">Total Keluar: <span id="keluar">0</span></div>
-<div class="card saldo">Saldo: <span id="saldo">0</span></div>
-
-<h3>Riwayat</h3>
-<table id="tabel">
-<tr>
-    <th>Tanggal</th>
-    <th>Keterangan</th>
-    <th>Jumlah</th>
-    <th>Tipe</th>
-</tr>
-</table>
-
-<script>
-fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vRxUVvX1C-dr4AJ-5YxXzeI7xQGevP7iblGcYk8digtddOJH-SyIiHiEKlOnPh5WlJl-tj4cQ9m_bcs/pub?gid=0&single=true&output=csv')
-.then(res => res.text())
-.then(data => {
-    let rows = data.split('\n').slice(1);
-
-    let masuk = 0;
-    let keluar = 0;
-    let tabel = document.getElementById("tabel");
-
-    rows.forEach(r => {
-        let c = r.split(',');
-        if(c.length < 4) return;
-
-        let jumlah = parseInt(c[2]);
-        let tipe = c[3].trim();
-
-        tabel.innerHTML += `
-        <tr>
-            <td>${c[0]}</td>
-            <td>${c[1]}</td>
-            <td>${jumlah}</td>
-            <td>${tipe}</td>
-        </tr>`;
-
-        if(tipe === "masuk") masuk += jumlah;
-        else keluar += jumlah;
-    });
-
-    document.getElementById("masuk").innerText = masuk;
-    document.getElementById("keluar").innerText = keluar;
-    document.getElementById("saldo").innerText = masuk - keluar;
-});
-</script>
+<iframe 
+    src="https://docs.google.com/spreadsheets/d/e/2PACX-1vRxUVvX1C-dr4AJ-5YxXzeI7xQGevP7iblGcYk8digtddOJH-SyIiHiEKlOnPh5WlJl-tj4cQ9m_bcs/pubhtml"
+    width="100%" 
+    height="600">
+</iframe>
 
 </body>
 </html>
