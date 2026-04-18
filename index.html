@@ -1,148 +1,186 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Monitoring Kas</title>
+<title>Kas studio</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 body {
-    margin: 0;
     font-family: Arial;
-    background: #f4f6f9;
+    margin: 0;
+    background: #f2f2f2;
 }
 
 .header {
-    background: linear-gradient(90deg, #007bff, #00c6ff);
+    background: linear-gradient(to right, #00c6ff, #0072ff);
     color: white;
-    padding: 15px;
     text-align: center;
+    padding: 15px;
     font-size: 20px;
 }
 
 .container {
-    max-width: 900px;
-    margin: auto;
-    padding: 20px;
-}
-
-.cards {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
+    padding: 15px;
 }
 
 .card {
-    flex: 1;
-    min-width: 120px;
     padding: 15px;
-    border-radius: 10px;
+    border-radius: 15px;
     color: white;
+    margin-bottom: 10px;
     text-align: center;
 }
 
-.masuk { background: #28a745; }
-.keluar { background: #dc3545; }
-.saldo { background: #007bff; }
+.green { background: #28a745; }
+.red { background: #dc3545; }
+.blue { background: #007bff; }
+
+select {
+    padding: 10px;
+    width: 100%;
+    margin-bottom: 15px;
+    border-radius: 10px;
+    border: none;
+}
 
 .box {
     background: white;
     padding: 15px;
-    border-radius: 10px;
-    margin-top: 15px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    border-radius: 15px;
 }
-
-iframe {
-    width: 100%;
-    height: 500px;
-    border: none;
-    border-radius: 10px;
-}
-
-canvas {
-    margin-top: 20px;
-}
-
 </style>
 </head>
 
 <body>
 
-<div class="header">
-Kas studio
-</div>
+<div class="header">\Kas Studio</div>
 
 <div class="container">
 
-<div class="cards">
-    <div class="card masuk">
-        <h4>Masuk</h4>
-        <span id="masuk">176000</span>
-    </div>
+<select id="filterBulan">
+  <option value="all">Semua Bulan</option>
+  <option>April</option>
+  <option>Mei</option>
+  <option>Juni</option>
+  <option>Juli</option>
+  <option>Agustus</option>
+  <option>September</option>
+  <option>Oktober</option>
+  <option>November</option>
+  <option>Desember</option>
+</select>
 
-    <div class="card keluar">
-        <h4>Keluar</h4>
-        <span id="keluar">-</span>
-    </div>
+<div class="card green">
+    <h3>Masuk</h3>
+    <p id="masuk">Rp 176.000</p>
+</div>
 
-    <div class="card saldo">
-        <h4>Saldo</h4>
-        <span id="saldo">176000</span>
-    </div>
+<div class="card red">
+    <h3>Keluar</h3>
+    <p id="keluar">Rp 176.000</p>
+</div>
+
+<div class="card blue">
+    <h3>Saldo</h3>
+    <p id="saldo">Rp 0</p>
 </div>
 
 <div class="box">
-    <h3>Grafik</h3>
+    <h3>Grafik Kas</h3>
     <canvas id="chart"></canvas>
-</div>
-
-<div class="box">
-    <h3>Data Transaksi</h3>
-    <iframe 
-        src="https://docs.google.com/spreadsheets/d/e/2PACX-1vRxUVvX1C-dr4AJ-5YxXzeI7xQGevP7iblGcYk8digtddOJH-SyIiHiEKlOnPh5WlJl-tj4cQ9m_bcs/pubhtml?gid=0&single=true">
-    </iframe>
 </div>
 
 </div>
 
 <script>
-fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vRxUVvX1C-dr4AJ-5YxXzeI7xQGevP7iblGcYk8digtddOJH-SyIiHiEKlOnPh5WlJl-tj4cQ9m_bcs/pub?output=csv')
+
+const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRxUVvX1C-dr4AJ-5YxXzeI7xQGevP7iblGcYk8digtddOJH-SyIiHiEKlOnPh5WlJl-tj4cQ9m_bcs/pub?output=csv";
+
+let rawData = [];
+let chart;
+
+// ambil data
+fetch(url)
 .then(res => res.text())
-.then(data => {
-    let rows = data.split('\n').slice(1);
-
-    let masuk = 0;
-    let keluar = 0;
-
-    rows.forEach(r => {
-        let c = r.split(',');
-        if(c.length < 4) return;
-
-        let jumlah = parseInt(c[2]);
-        let tipe = c[3].trim();
-
-        if(tipe === "masuk") masuk += jumlah;
-        else keluar += jumlah;
-    });
-
-    let saldo = masuk - keluar;
-
-    document.getElementById("masuk").innerText = masuk;
-    document.getElementById("keluar").innerText = keluar;
-    document.getElementById("saldo").innerText = saldo;
-
-    new Chart(document.getElementById('chart'), {
-        type: 'doughnut',
-        data: {
-            labels: ['Masuk', 'Keluar'],
-            datasets: [{
-                data: [masuk, keluar]
-            }]
-        }
-    });
+.then(text => {
+  rawData = text.split("\n").slice(1).map(row => row.split(","));
+  updateData();
 });
+
+// event filter
+document.getElementById("filterBulan").addEventListener("change", updateData);
+
+function updateData() {
+  const bulanDipilih = document.getElementById("filterBulan").value;
+
+  let total = 0;
+  let perBulan = {
+    April:176.000, Mei:0, Juni:0, Juli:0,
+    Agustus:0, September:0, Oktober:0,
+    November:0, Desember:0
+  };
+
+  rawData.forEach(cols => {
+    const bulanList = Object.keys(perBulan);
+
+    bulanList.forEach((bulan, i) => {
+      let value = toNumber(cols[i+1]); // kolom bulan
+
+      if (bulanDipilih === "all" || bulanDipilih === bulan) {
+        total += value;
+      }
+
+      perBulan[bulan] += value;
+    });
+  });
+
+  document.getElementById("masuk").innerText = rupiah(total);
+  document.getElementById("keluar").innerText = rupiah(0);
+  document.getElementById("saldo").innerText = rupiah(total);
+
+  renderChart(perBulan, bulanDipilih);
+}
+
+// chart
+function renderChart(data, filter) {
+  const ctx = document.getElementById("chart");
+
+  if (chart) chart.destroy();
+
+  chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: filter === "all" ? Object.keys(data) : [filter],
+      datasets: [{
+        label: 'Kas',
+        data: filter === "all"
+          ? Object.values(data)
+          : [data[filter]]
+      }]
+    }
+  });
+}
+
+// parser anti NaN
+function toNumber(value) {
+  if (!value) return 0;
+
+  return parseFloat(
+    value
+      .replace(/Rp/gi, "")
+      .replace(/\./g, "")
+      .replace(/,/g, ".")
+  ) || 0;
+}
+
+// format rupiah
+function rupiah(angka) {
+  return "Rp " + angka.toLocaleString("id-ID");
+}
+
 </script>
 
 </body>
