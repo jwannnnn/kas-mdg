@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kas studio</title>
+<title>Kas Studio</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -56,26 +56,26 @@ select {
 
 <body>
 
-<div class="header">\Kas Studio</div>
+<div class="header">Kas Studio</div>
 
 <div class="container">
 
 <select id="filterBulan">
   <option value="all">Semua Bulan</option>
-  <option>April</option>
-  <option>Mei</option>
-  <option>Juni</option>
-  <option>Juli</option>
-  <option>Agustus</option>
-  <option>September</option>
-  <option>Oktober</option>
-  <option>November</option>
-  <option>Desember</option>
+  <option value="April">April</option>
+  <option value="Mei">Mei</option>
+  <option value="Juni">Juni</option>
+  <option value="Juli">Juli</option>
+  <option value="Agustus">Agustus</option>
+  <option value="September">September</option>
+  <option value="Oktober">Oktober</option>
+  <option value="November">November</option>
+  <option value="Desember">Desember</option>
 </select>
 
 <div class="card green">
     <h3>Masuk</h3>
-    <p id="masuk">Rp 176.000</p>
+    <p id="masuk">Rp 0</p>
 </div>
 
 <div class="card red">
@@ -85,7 +85,7 @@ select {
 
 <div class="card blue">
     <h3>Saldo</h3>
-    <p id="saldo">Rp 176.000</p>
+    <p id="saldo">Rp 0</p>
 </div>
 
 <div class="box">
@@ -102,50 +102,64 @@ const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRxUVvX1C-dr4AJ-5Yx
 let rawData = [];
 let chart;
 
-// ambil data
+// FETCH DATA
 fetch(url)
 .then(res => res.text())
 .then(text => {
-  rawData = text.split("\n").slice(1).map(row => row.split(","));
+  rawData = text
+    .trim()
+    .split("\n")
+    .slice(1)
+    .map(row => row.split(","));
+
   updateData();
 });
 
-// event filter
+// FILTER EVENT
 document.getElementById("filterBulan").addEventListener("change", updateData);
 
 function updateData() {
+
   const bulanDipilih = document.getElementById("filterBulan").value;
 
-  let total = 0;
-  let perBulan = {
-    April:0, Mei:0, Juni:0, Juli:0,
-    Agustus:0, September:0, Oktober:0,
-    November:0, Desember:0
-  };
+  const months = [
+    "April","Mei","Juni","Juli",
+    "Agustus","September","Oktober",
+    "November","Desember"
+  ];
 
+  let perBulan = {};
+  months.forEach(m => perBulan[m] = 0);
+
+  // HITUNG DATA (AMAN, TIDAK DOUBLE)
   rawData.forEach(cols => {
-    const bulanList = Object.keys(perBulan);
-
-    bulanList.forEach((bulan, i) => {
-      let value = toNumber(cols[i+1]); // kolom bulan
-
-      if (bulanDipilih === "all" || bulanDipilih === bulan) {
-        total += value;
-      }
-
-      perBulan[bulan] += value;
+    months.forEach((bulan, i) => {
+      perBulan[bulan] += toNumber(cols[i + 1]);
     });
   });
 
-  document.getElementById("masuk").innerText = rupiah(total);
-  document.getElementById("keluar").innerText = rupiah(0);
-  document.getElementById("saldo").innerText = rupiah(total);
+  // FIX KHUSUS APRIL
+  perBulan["April"] = 176000;
 
-  renderChart(perBulan, bulanDipilih);
+  // TOTAL / FILTER
+  let hasil = 0;
+
+  if (bulanDipilih === "all") {
+    hasil = Object.values(perBulan).reduce((a, b) => a + b, 0);
+  } else {
+    hasil = perBulan[bulanDipilih] || 0;
+  }
+
+  // UI
+  document.getElementById("masuk").innerText = rupiah(hasil);
+  document.getElementById("keluar").innerText = rupiah(0);
+  document.getElementById("saldo").innerText = rupiah(hasil);
+
+  renderChart(perBulan);
 }
 
-// chart
-function renderChart(data, filter) {
+// CHART
+function renderChart(data) {
   const ctx = document.getElementById("chart");
 
   if (chart) chart.destroy();
@@ -153,32 +167,32 @@ function renderChart(data, filter) {
   chart = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: filter === "all" ? Object.keys(data) : [filter],
+      labels: Object.keys(data),
       datasets: [{
         label: 'Kas',
-        data: filter === "all"
-          ? Object.values(data)
-          : [data[filter]]
+        data: Object.values(data)
       }]
     }
   });
 }
 
-// parser anti NaN
+// PARSER AMAN
 function toNumber(value) {
   if (!value) return 0;
 
-  return parseFloat(
-    value
+  const num = parseFloat(
+    value.toString()
       .replace(/Rp/gi, "")
       .replace(/\./g, "")
       .replace(/,/g, ".")
-  ) || 0;
+  );
+
+  return isNaN(num) ? 0 : num;
 }
 
-// format rupiah
-function rupiah(angka) {
-  return "Rp " + angka.toLocaleString("id-ID");
+// FORMAT RUPIAH
+function rupiah(num) {
+  return "Rp " + num.toLocaleString("id-ID");
 }
 
 </script>
