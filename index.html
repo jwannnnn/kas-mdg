@@ -1,19 +1,149 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Kas</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitoring Kas</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial;
+    background: #f4f6f9;
+}
+
+.header {
+    background: linear-gradient(90deg, #007bff, #00c6ff);
+    color: white;
+    padding: 15px;
+    text-align: center;
+    font-size: 20px;
+}
+
+.container {
+    max-width: 900px;
+    margin: auto;
+    padding: 20px;
+}
+
+.cards {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.card {
+    flex: 1;
+    min-width: 120px;
+    padding: 15px;
+    border-radius: 10px;
+    color: white;
+    text-align: center;
+}
+
+.masuk { background: #28a745; }
+.keluar { background: #dc3545; }
+.saldo { background: #007bff; }
+
+.box {
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 15px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+iframe {
+    width: 100%;
+    height: 500px;
+    border: none;
+    border-radius: 10px;
+}
+
+canvas {
+    margin-top: 20px;
+}
+
+</style>
 </head>
+
 <body>
 
-<h2>Kas Std</h2>
+<div class="header">
+📊 Monitoring Kas
+</div>
 
-<iframe 
-    src="https://docs.google.com/spreadsheets/d/e/2PACX-1vRxUVvX1C-dr4AJ-5YxXzeI7xQGevP7iblGcYk8digtddOJH-SyIiHiEKlOnPh5WlJl-tj4cQ9m_bcs/pubhtml?gid=0&single=true"
-    width="100%" 
-    height="600"
-    style="border:none;">
-</iframe>
+<div class="container">
+
+<div class="cards">
+    <div class="card masuk">
+        <h4>Masuk</h4>
+        <span id="masuk">176.000</span>
+    </div>
+
+    <div class="card keluar">
+        <h4>Keluar</h4>
+        <span id="keluar">-</span>
+    </div>
+
+    <div class="card saldo">
+        <h4>Saldo</h4>
+        <span id="saldo">176.000</span>
+    </div>
+</div>
+
+<div class="box">
+    <h3>Grafik</h3>
+    <canvas id="chart"></canvas>
+</div>
+
+<div class="box">
+    <h3>Data Transaksi</h3>
+    <iframe 
+        src="https://docs.google.com/spreadsheets/d/e/2PACX-1vRxUVvX1C-dr4AJ-5YxXzeI7xQGevP7iblGcYk8digtddOJH-SyIiHiEKlOnPh5WlJl-tj4cQ9m_bcs/pubhtml?gid=0&single=true">
+    </iframe>
+</div>
+
+</div>
+
+<script>
+fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vRxUVvX1C-dr4AJ-5YxXzeI7xQGevP7iblGcYk8digtddOJH-SyIiHiEKlOnPh5WlJl-tj4cQ9m_bcs/pub?output=csv')
+.then(res => res.text())
+.then(data => {
+    let rows = data.split('\n').slice(1);
+
+    let masuk = 0;
+    let keluar = 0;
+
+    rows.forEach(r => {
+        let c = r.split(',');
+        if(c.length < 4) return;
+
+        let jumlah = parseInt(c[2]);
+        let tipe = c[3].trim();
+
+        if(tipe === "masuk") masuk += jumlah;
+        else keluar += jumlah;
+    });
+
+    let saldo = masuk - keluar;
+
+    document.getElementById("masuk").innerText = masuk;
+    document.getElementById("keluar").innerText = keluar;
+    document.getElementById("saldo").innerText = saldo;
+
+    new Chart(document.getElementById('chart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Masuk', 'Keluar'],
+            datasets: [{
+                data: [masuk, keluar]
+            }]
+        }
+    });
+});
+</script>
 
 </body>
 </html>
